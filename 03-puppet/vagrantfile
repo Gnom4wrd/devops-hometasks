@@ -1,0 +1,6 @@
+Vagrant.configure("2") do |config|
+    $vm_names.each_with_index do |name, index|
+      ip = "#{$network_ip}.#{index + 10}"
+      create_vm(config, name, ip)
+    end
+  end

@@ -1,0 +1,48 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - epel-release
+        - git
+        - ruby
+        - ruby-devel
+        - gcc
+        - make
+        - puppet
+    
+      gem:
+        name: r10k
+        state: present
+      when: "'puppet_servers' in group_names"
+     
+      git:
+        repo: "{{ puppet_repo }}"
+        dest: /etc/puppetlabs/code/environments/production
+        force: yes
+      when: "'puppet_servers' in group_names"
+    - name: Запускаем r10k для установки модулей puppet
+      command: r10k puppetfile install
+      args:
+        chdir: /etc/puppetlabs/code/environments/production
+      when: "'puppet_servers' in group_names"
+     
+      ini_file:
+        path: /etc/puppetlabs/puppet/puppet.conf
+        section: main
+        option: "{{ item.option }}"
+        value: "{{ item.value }}"
+      loop:
+        - { option: server, value: "{{ puppet_server }}" }
+        - { option: certname, value: "{{ inventory_hostname }}" }
+        - { option: environment, value: production }
+        - { option: runinterval, value: 300 }
+     
+      service:
+        name: puppet
+        state: started
+        enabled: yes
