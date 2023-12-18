@@ -2,7 +2,7 @@ $network_ip = "192.168.33"
 $network_mask = "255.255.255.0"
 
 $puppet_server = "master.puppet"
-$puppet_repo = "https://github.com/yourname/puppet-repo.git"
+$puppet_repo = "https://github.com/Gnom4wrd/devops-hometasks/puppet-repo.git"
 
 $ansible_playbook = "provision.yml"
 $ansible_inventory = "inventory.ini"
@@ -15,7 +15,7 @@ def create_vm(config, name, ip)
     node.vm.hostname = "#{name}.puppet"
     node.vm.network "private_network", ip: "#{ip}", netmask: "#{$network_mask}"
     node.vm.provider "virtualbox" do |vb|
-      vb.memory = "512"
+      vb.memory = "1024"
     end
    
     node.vm.provision "ansible" do |ansible|

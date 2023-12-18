@@ -25,7 +25,6 @@
         dest: /etc/puppetlabs/code/environments/production
         force: yes
       when: "'puppet_servers' in group_names"
-    - name: Запускаем r10k для установки модулей puppet
       command: r10k puppetfile install
       args:
         chdir: /etc/puppetlabs/code/environments/production
