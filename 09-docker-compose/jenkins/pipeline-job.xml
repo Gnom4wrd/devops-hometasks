@@ -1,0 +1,45 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.40">
+  <actions/>
+  <description>Pipeline job for testing, building and uploading artifact to Nexus</description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>version</name>
+          <description>The version of the artifact</description>
+          <defaultValue>1.0</defaultValue>
+          <trim>false</trim>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.87">
+    <script>pipeline {
+    agent any
+    stages {
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn package -DskipTests'
+            }
+        }
+        stage('Upload') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'nexus-credentials', passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USERNAME')]) {
+                    sh 'mvn deploy:deploy-file -Durl=http://nexus:8081/repository/maven-releases/ -DrepositoryId=nexus -Dfile=target/my-app-${version}.jar -DgroupId=com.mycompany.app -DartifactId=my-app -Dversion=${version} -Dpackaging=jar -DgeneratePom=true -Dusername=${NEXUS_USERNAME} -Dpassword=${NEXUS_PASSWORD}'
+                }
+            }
+        }
+    }
+}</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>

@@ -6,4 +6,4 @@ RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
 ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
 COPY admin-user.groovy /usr/share/jenkins/ref/init.groovy.d/admin-user.groovy
 COPY nexus-credentials.xml /var/jenkins_home/com.cloudbees.plugins.credentials.SystemCredentialsProvider.xml
-
+COPY pipeline-job.xml /var/jenkins_home/jobs/pipeline-job/config.xml
