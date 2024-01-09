@@ -1,0 +1,23 @@
+nexus_admin_password: "secret"
+nexus_users:
+  - username: "user1"
+    password: "password1"
+    roles: ["nx-admin"]
+  - username: "user2"
+    password: "password2"
+    roles: ["nx-developer"]
+nexus_roles:
+  - id: "nx-developer"
+    name: "Developer"
+    description: "Developer role"
+    privileges: ["nx-repository-view-*-*-*"]
+    roles: []
+nexus_repos:
+  - name: "maven-central"
+    type: "proxy"
+    format: "maven2"
+    online: true
+    remote_url: "https://repo1.maven.org/maven2/"
+    blob_store: "default"
+    version_policy: "RELEASE"
+    layout_policy: "STRICT"

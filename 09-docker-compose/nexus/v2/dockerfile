@@ -1,0 +1,16 @@
+# Используем официальный образ Nexus
+FROM sonatype/nexus3:latest
+
+# Устанавливаем ansible и зависимости
+RUN yum install -y epel-release && \
+    yum install -y ansible && \
+    yum clean all
+
+# Копируем ansible роль для Nexus в контейнер
+COPY ansible-role-nexus /etc/ansible/roles/nexus
+
+# Запускаем ansible-playbook для настройки Nexus
+RUN ansible-playbook /etc/ansible/roles/nexus/tasks/main.yml
+
+# Открываем порт 8081 для Nexus
+EXPOSE 8081
