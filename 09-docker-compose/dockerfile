@@ -1,0 +1,5 @@
+FROM sonatype/nexus3:3.34.1
+ USER root
+  RUN yum install -y ansible
+  COPY ansible /ansible
+   
