@@ -1,0 +1,75 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    config.vm.box = "generic/debian11"
+    config.vm.synced_folder  ".", "/vagrant", disabled: false
+
+    config.vm.define "jenkins.vm", primary: true do |jenkins|
+        jenkins.vm.network "private_network", ip: "192.168.33.5"
+        jenkins.vm.network "forwarded_port", guest: 8080, host: 8090
+        jenkins.vm.hostname = "jenkins.vm"
+        jenkins.vm.provider("virtualbox") { |vb| vb.memory = 1024 }
+        jenkins.vm.provision "shell", inline: <<-SHELL
+            sed -i "s/^PasswordAuthentication no\$/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+            service sshd restart
+            sed -i "s/^#force_color_prompt=yes\$/force_color_prompt=yes/g" /home/vagrant/.bashrc
+            sed -i "s/^#alias ll='ls -l'\$/alias ll='ls -la'/g" /home/vagrant/.bashrc
+            echo "alias ll='ls -l'" >> /root/.bashrc
+        SHELL
+    end
+
+    config.vm.define "nexus.vm" do |nexus|
+        nexus.vm.network "private_network", ip: "192.168.33.10"
+        nexus.vm.hostname = "nexus.vm"
+        nexus.vm.provider("virtualbox") { |vb| vb.memory = 2048}
+
+        nexus.vm.provision :shell, inline: <<-SHELL
+            sed -i "s/^PasswordAuthentication no\$/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+            service sshd restart
+        SHELL
+    end
+
+    config.vm.define "staging.vm" do |staging|
+        staging.vm.network "private_network", ip: "192.168.33.15"
+        staging.vm.hostname = "staging.vm"
+        staging.vm.provider("virtualbox") { |vb| vb.memory = 256 }
+        staging.vm.provision :shell, inline: <<-SHELL
+            sed -i "s/^PasswordAuthentication no\$/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+            service sshd restart
+        SHELL
+    end
+
+    config.vm.define "production.vm" do |production|
+        production.vm.network "private_network", ip: "192.168.33.20"
+        production.vm.hostname = "production.vm"
+        production.vm.provider("virtualbox") { |vb| vb.memory = 256 }
+        production.vm.provision :shell, inline: <<-SHELL
+            sed -i "s/^PasswordAuthentication no\$/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+            service sshd restart
+        SHELL
+    end
+
+    config.vm.define "master", primary: true do |master|
+        master.vm.network "private_network", ip: "192.168.33.1"
+        master.vm.hostname = "master"
+        master.vm.provider("virtualbox") { |vb| vb.memory = 512 }
+
+        master.vm.provision :shell, inline: <<-SHELL
+            apt-get update
+            apt-get install -y nano sshpass #ansible
+            sed -i "s/^#force_color_prompt=yes\$/force_color_prompt=yes/g" /home/vagrant/.bashrc
+            sed -i "s/^#alias ll='ls -l'\$/alias ll='ls -la'/g" /home/vagrant/.bashrc
+            echo "alias ll='ls -l'" >> /root/.bashrc
+            # cd /vagrant && ansible-playbook -i inventory playbook.yaml
+        SHELL
+
+        master.vm.provision "ansible_local" do |ansible|
+            ansible.playbook = "playbook.yaml"
+            ansible.inventory_path = "inventory"
+            ansible.limit = "all"
+            ansible.galaxy_role_file = "requirements.yaml"
+            ansible.become = true
+        end
+    end
+end
