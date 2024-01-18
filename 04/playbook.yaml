@@ -1,0 +1,160 @@
+---
+- name: --= All Servers config =--
+  hosts: all
+  become: true
+  tasks:
+    - name: GPG key add
+      rpm_key:
+        key: https://yum.puppet.com/RPM-GPG-KEY-puppet-20250406
+        state: present
+
+    - name: Install Puppet repository
+      yum:
+        name: https://yum.puppet.com/puppet-release-el-8.noarch.rpm
+        state: present
+
+    - name: Stop and disable firewalld
+      service:
+        name: firewalld
+        state: stopped
+        enabled: False
+
+# Master VM
+
+- name: --= Master Puppet Server =--
+  hosts: master.puppet
+  become: true
+  tasks:
+
+    - name: Install packages
+      yum:
+        pkg:
+        - puppetserver
+        - git
+        - mc
+        state: present
+
+    - name: Add path to .bashrc
+      lineinfile:
+        path: /root/.bashrc
+        line: 'export PATH="/opt/puppetlabs/bin:/opt/puppetlabs/puppet/bin:$PATH"'
+        state: present
+    
+    - name: install r10k    
+      command: /opt/puppetlabs/puppet/bin/gem install r10k
+
+    - name: Create dir for r10k config
+      file:
+        path: /etc/puppetlabs/r10k
+        state: directory
+
+    - name: Create config r10k
+      copy:
+        dest: /etc/puppetlabs/r10k/r10k.yaml
+        content: | 
+          ---
+          :cachedir: '/var/cache/r10k'
+          :sources:
+            :my-org:
+              remote: 'https://github.com/arraktur/04-puppet.git'
+              basedir: '/etc/puppetlabs/code/environments'
+
+    - name: Change memory use
+      replace:
+        path: /etc/sysconfig/puppetserver
+        regexp: 'JAVA_ARGS="-Xms2g -Xmx2g'
+        replace: 'JAVA_ARGS="-Xms256m -Xmx256m'
+
+    - name: Creating a file autosign.conf
+      copy:
+        dest: /etc/puppetlabs/puppet/autosign.conf
+        content: |
+          slave1.puppet
+          slave2.puppet
+          mineserver.puppet
+
+    - name: Edit hosts    
+      blockinfile:
+        dest: /etc/hosts
+        block: |
+         - '192.168.33.10 slave1.puppet'
+         - '192.168.33.15 slave2.puppet'
+         - '192.168.33.20 mineserver.puppet'
+
+    - name: Add host puppetserver
+      blockinfile: 
+        dest: /etc/puppetlabs/puppet/puppet.conf
+        block: |
+          [agent]
+          server = master.puppet
+          autosign = true 
+
+    - name: Start puppetserver daemon
+      service:
+        name: puppetserver
+        state: started
+        enabled: true
+
+    - name: Deploy r10k environment
+      shell: /opt/puppetlabs/puppet/bin/r10k deploy environment -p
+
+    - name: Running Puppet agent
+      systemd:
+        state: started
+        enabled: yes
+        name: puppet          
+
+
+#Slave VM
+
+- name: --= Slave Puppet =--
+  become: true
+  hosts:
+    - slave1.puppet
+    - slave2.puppet
+    - mineserver.puppet
+  
+  tasks:
+
+    - name: Install puppet agent
+      yum:
+        pkg: 
+        - puppet-agent
+        - mc
+        state: present
+
+    - name: Add master.puppet to /etc/hosts
+      lineinfile: 
+        path: /etc/hosts
+        line: '192.168.33.5 master.puppet puppet'
+
+    - name: Enable puppet
+      service:
+        name: puppet
+        state: started
+        # enabled: true
+
+    - name: Enable password authentification
+      replace:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication no$'
+        replace: 'PasswordAuthentication yes'
+
+    - name: Restart sshd
+      service:
+        name: sshd
+        state: restarted    
+
+    - name: Agent settings
+      blockinfile: 
+        dest: /etc/puppetlabs/puppet/puppet.conf
+        block: |
+          [agent]
+          server = master.puppet
+          runinterval = 1m 
+
+    - name: Running Puppet agent
+      systemd:
+        state: started
+        enabled: yes
+        name: puppet          
