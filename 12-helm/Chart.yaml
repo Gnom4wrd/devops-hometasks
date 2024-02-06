@@ -1,0 +1,6 @@
+apiVersion: v2
+name: wcg
+version: v0.0.13
+appVersion: "0.0.0"
+description: word-cloud-generator
+type: application

@@ -1,0 +1,8 @@
+image:
+  tag: v2
+
+replicas: 2
+
+ingress:
+  host: word-cloud-generator.test.local
+  path: "/"
