@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wcg-ingress
+spec:
+  rules:
+  - host: word-cloud-generator.test.pc
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wcg-service
+            port:
+              number: 8888
