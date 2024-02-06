@@ -11,7 +11,7 @@ container:
   name: word-cloud-generator
 
 image:
-  repository: ghcr.io/viinsent/wcg
+  repository: ghcr.io/Gnom4wrd/wcg
   tag: "latest"
 
 ingress:
