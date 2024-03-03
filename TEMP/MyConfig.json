@@ -1,0 +1,19 @@
+{
+    "Profiles": [
+      {
+        "Name": "Quiet",
+        "TempRanges": [
+          { "From": 0, "To": 50, "FanSpeed": 30 },
+          { "From": 50, "To": 60, "FanSpeed": 50 }
+        ]
+      },
+      {
+        "Name": "Performance",
+        "TempRanges": [
+          { "From": 60, "To": 100, "FanSpeed": 100 }
+        ]
+      }
+    ],
+    "ControlMode": "auto"
+  }
+  
